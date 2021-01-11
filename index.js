@@ -1,6 +1,7 @@
 const inquirer = require("inquirer");
 let cTable = require("console.table");
 const mysql = require("mysql");
+const { createConnection } = require("net");
 
 const db = mysql.createConnection({
     host: "localhost",
@@ -16,6 +17,17 @@ db.connect(function(err) {
 })
 
 /* Required database calls */
+
+function viewEmployees() {
+    console.log("");
+
+    db.query("SELECT * FROM employee", function(err, res) {
+        if (err) throw err;
+        // Log all results of the SELECT statement
+        console.log(res);
+        main();
+      });
+    }
 
 /* End Database Calls */
 
@@ -51,7 +63,8 @@ async function main() {
     const prompt = await mainPrompt();
     switch(prompt.action) {
         case 'View All Employees' : {
-            console.log("Viewed Employees");
+            console.log("Getting employees...");
+            await viewEmployees();
             break;
         }
 
