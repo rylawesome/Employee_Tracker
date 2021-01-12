@@ -1,9 +1,8 @@
 const inquirer = require("inquirer");
 let cTable = require("console.table");
-const mysql = require("mysql");
-const { createConnection } = require("net");
+let Database = require("./sync_db");
 
-const db = mysql.createConnection({
+const db = new Database({
     host: "localhost",
     port: 3306,
     user: "root",
@@ -11,22 +10,11 @@ const db = mysql.createConnection({
     database: "cms_db"
 });
 
-db.connect(function(err) {
-    if (err) throw err;
-    main();
-})
-
 /* Required database calls */
 
-function viewEmployees() {
-    console.log("");
-
-    db.query("SELECT * FROM employee", function(err, res) {
-        if (err) throw err;
-        // Log all results of the SELECT statement
-        console.log(res);
-        main();
-      });
+async function viewEmployees() {
+    const rows = await db.query("SELECT * FROM employee");
+    console.table(rows);
     }
 
 /* End Database Calls */
@@ -79,7 +67,10 @@ async function main() {
         }
 
         case 'Add Employee' : {
-            console.log("Added employee");
+            const newEmployee = await addEmployeeInfo();
+            console.log("add an employee");
+            console.log(newEmployee);
+            await addEmployee(newEmployee);
             break;
         }
 
@@ -119,8 +110,16 @@ async function main() {
         }
 
         case 'Exit' : {
-            console.log("added deparmtent");
-            break;
+            console.log("Exiting...")
+            exit = true;
+            if(exit === true) {
+                console.log("Successful Exit")
+                return;
+            }
+            else {
+                console.log("Exit failed! App Error. Press CTRL+C to Exit Manually")
+                break;
+            }
         }
 
         default:
@@ -128,3 +127,5 @@ async function main() {
     }
 }
 }
+
+main();
