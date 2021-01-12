@@ -12,6 +12,8 @@ const db = new Database({
 
 // Required database calls
 
+//Following three view employees, roles, and department
+
 async function viewEmployees() {
     const rows = await db.query("SELECT * FROM employee");
     console.table(rows);
@@ -118,13 +120,14 @@ async function addEmployeeInfo() {
         ])
 }
 
+//returns employee id attached w/ first & last name
+
 async function getEmployeeId(fullName) {
     let employee = getFirstAndLastName(fullName);
 
     const rows = await db.query('SELECT id FROM employee WHERE employee.first_name=? AND employee.last_name=?', [employee[0], employee[1]]);
     return rows[0].id;
 }
-
 
 async function addEmployee(employeeInfo) {
     let roleId = await getRoleId(employeeInfo.role);
@@ -160,6 +163,8 @@ async function updateEmployeeRoleInfo() {
         ])
 }
 
+//Retrieves/returns all department names
+
 async function getDepartmentNames() {
     const rows = await db.query("SELECT name FROM department");
 
@@ -170,6 +175,8 @@ async function getDepartmentNames() {
 
     return departments;
 }
+
+// Collects new Role info
 
 async function getRoleInfo() {
     const departments = await getDepartmentNames();
@@ -196,6 +203,8 @@ async function getRoleInfo() {
     ])
 }
 
+// Updates Employee Roles
+
 async function updateEmployeeRole(employeeInfo) {
     const roleId = await getRoleId(employeeInfo.role);
     const employee = getFirstAndLastName(employeeInfo.employeeName);
@@ -204,10 +213,14 @@ async function updateEmployeeRole(employeeInfo) {
     console.log(`Employee ${employee[0]} ${employee[1]} now has role ${employeeInfo.role}`);
 }
 
+// Finds specific department
+
 async function getDepartmentId(departmentName) {
     const rows = await db.query("SELECT * FROM department WHERE department.name=?", [departmentName]);
     return rows[0].id;
 }
+
+// Creates new Role
 
 async function addRole(roleInfo) {
     const departmentId = await getDepartmentId(roleInfo.departmentName);
@@ -216,6 +229,8 @@ async function addRole(roleInfo) {
     const rows = await db.query('INSERT into role (title, salary, department_id) VALUES (?,?,?)', [title, salary, departmentId]);
     console.log(`Added role ${title}`);
 }
+
+// Simple, gives name to new department
 
 async function getDepartment() {
     return inquirer
@@ -247,12 +262,12 @@ async function mainPrompt() {
                 name: "action",
                 choices: [
                   "View All Employees",
-                  "View All Employees By Department(To Be Implemented!)",
-                  "View All Employees By Manager(To Be Implemented!)",
+                  "!!!View All Employees By Department!!!(To Be Implemented!)",
+                  "!!!View All Employees By Manager!!!(To Be Implemented!)",
                   "Add Employee",
-                  "Remove Employee(To Be Implemented!)",
+                  "!!!Remove Employee!!!(To Be Implemented!)",
                   "Update Employee Role",
-                  "Update Employee Manager(To Be Implemented)",
+                  "!!!Update Employee Manager!!!(To Be Implemented)",
                   "Add Role",
                   "View All Roles",
                   "Add Department",
