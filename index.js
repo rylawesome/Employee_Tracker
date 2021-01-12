@@ -23,6 +23,12 @@ async function viewRoles() {
     return rows;
 }
 
+async function viewDepartment() {
+    const rows = await db.query("SELECT * FROM department");
+    console.table(rows);
+    return rows;
+}
+
 // Return array with [first_name, last_name]
 
 function getFirstAndLastName( fullName ) {
@@ -115,9 +121,7 @@ async function addEmployeeInfo() {
 async function getEmployeeId(fullName) {
     let employee = getFirstAndLastName(fullName);
 
-    let query = 'SELECT id FROM employee WHERE employee.first_name=? AND employee.last_name=?';
-    let args=[employee[0], employee[1]];
-    const rows = await db.query(query, args);
+    const rows = await db.query('SELECT id FROM employee WHERE employee.first_name=? AND employee.last_name=?', [employee[0], employee[1]]);
     return rows[0].id;
 }
 
@@ -213,6 +217,23 @@ async function addRole(roleInfo) {
     console.log(`Added role ${title}`);
 }
 
+async function getDepartment() {
+    return inquirer
+    .prompt([
+        {
+            type: "input",
+            message: "What is the name of the new department?",
+            name: "departmentName"
+        }
+    ])
+}
+
+async function addDepartment(departmentInfo) {
+    const departmentName = departmentInfo.departmentName;
+    const rows = await db.query('INSERT into department (name) VALUES (?)', [departmentName]);
+    console.log(`Added department ${departmentName}`);
+}
+
 
 //Start building user prompts
 
@@ -299,12 +320,13 @@ async function main() {
         }
 
         case 'Add Department' : {
-            console.log("Department Added");
+            const departmentName = await getDepartment();
+            await addDepartment(departmentName);
             break;
         }
 
         case 'View All Departments' : {
-            console.log("Departments Viewed");
+            await viewDepartment();
             break;
         }
 
