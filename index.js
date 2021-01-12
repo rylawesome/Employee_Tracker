@@ -17,6 +17,12 @@ async function viewEmployees() {
     console.table(rows);
     }
 
+async function viewRoles() {
+    const rows = await db.query("SELECT * FROM role");
+    console.table(rows);
+    return rows;
+}
+
 // Return array with [first_name, last_name]
 
 function getFirstAndLastName( fullName ) {
@@ -150,12 +156,61 @@ async function updateEmployeeRoleInfo() {
         ])
 }
 
+async function getDepartmentNames() {
+    const rows = await db.query("SELECT name FROM department");
+
+    let departments = [];
+    for(const row of rows) {
+        departments.push(row.name);
+    }
+
+    return departments;
+}
+
+async function getRoleInfo() {
+    const departments = await getDepartmentNames();
+    return inquirer
+    .prompt([
+        {
+            type: "input",
+            message: "Title of new role?",
+            name: "roleName"
+        },
+        {
+            type: "input",
+            message: "Salary of new role?",
+            name: "salary"
+        },
+        {
+            type: "list",
+            message: "Department that uses this role?",
+            name: "departmentName",
+            choices: [
+                ...departments
+            ]
+        }
+    ])
+}
+
 async function updateEmployeeRole(employeeInfo) {
     const roleId = await getRoleId(employeeInfo.role);
     const employee = getFirstAndLastName(employeeInfo.employeeName);
 
     const rows = await db.query('UPDATE employee SET role_id=? WHERE employee.first_name=? AND employee.last_name=?', [roleId, employee[0], employee[1]]);
     console.log(`Employee ${employee[0]} ${employee[1]} now has role ${employeeInfo.role}`);
+}
+
+async function getDepartmentId(departmentName) {
+    const rows = await db.query("SELECT * FROM department WHERE department.name=?", [departmentName]);
+    return rows[0].id;
+}
+
+async function addRole(roleInfo) {
+    const departmentId = await getDepartmentId(roleInfo.departmentName);
+    const salary = roleInfo.salary;
+    const title = roleInfo.roleName;
+    const rows = await db.query('INSERT into role (title, salary, department_id) VALUES (?,?,?)', [title, salary, departmentId]);
+    console.log(`Added role ${title}`);
 }
 
 
@@ -233,12 +288,13 @@ async function main() {
         }
 
         case 'Add Role' : {
-            console.log("added role");
+            const newRole = await getRoleInfo();
+            await addRole(newRole);
             break;
         }
 
         case 'View All Roles' : {
-            console.log("Roles Viewed");
+            await viewRoles();
             break;
         }
 
