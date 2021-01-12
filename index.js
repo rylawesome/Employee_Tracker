@@ -35,6 +35,17 @@ async function getRoleId(roleName) {
     return rows[0].id;
 }
 
+// Builds all employeeNames array
+
+async function getEmployeeNames() {
+    const rows = await db.query("SELECT * FROM employee");
+    let employeeNames = [];
+    for(const employee of rows) {
+        employeeNames.push(employee.first_name + " " + employee.last_name);
+    }
+    return employeeNames;
+}
+
 // Builds managerNames array
 
 async function getManagerNames() {
@@ -69,16 +80,16 @@ async function addEmployeeInfo() {
             {
                 type: "input",
                 name: "first_name",
-                message: "What is the employee's first name?"
+                message: "First name?"
             },
             {
                 type: "input",
                 name: "last_name",
-                message: "What is the employee's last name?"
+                message: "Last name?"
             },
             {
                 type: "list",
-                message: "What is the employee's role?",
+                message: "Employee's role?",
                 name: "role",
                 choices: [
                     ...roles
@@ -86,7 +97,7 @@ async function addEmployeeInfo() {
             },
             {
                 type: "list",
-                message: "Who is the employee's manager?",
+                message: "Employee's manager?",
                 name: "manager",
                 choices: [
                     ...managers
@@ -96,7 +107,6 @@ async function addEmployeeInfo() {
 }
 
 async function getEmployeeId(fullName) {
-    // First split the name into first name and last name
     let employee = getFirstAndLastName(fullName);
 
     let query = 'SELECT id FROM employee WHERE employee.first_name=? AND employee.last_name=?';
@@ -112,6 +122,40 @@ async function addEmployee(employeeInfo) {
 
     const rows = await db.query("INSERT into employee (first_name, last_name, role_id, manager_id) VALUES (?,?,?,?)", [employeeInfo.first_name, employeeInfo.last_name, roleId, managerId]);
     console.log(`Added employee ${employeeInfo.first_name} ${employeeInfo.last_name}.`);
+}
+
+//Gather info and update role
+
+async function updateEmployeeRoleInfo() {
+    const employees = await getEmployeeNames();
+    const roles = await getRoles();
+    return inquirer
+        .prompt([
+            {
+                type: "list",
+                message: "Which employee to update?",
+                name: "employeeName",
+                choices: [
+                    ...employees
+                ]
+            },
+            {
+                type: "list",
+                message: "Employee's new role?",
+                name: "role",
+                choices: [
+                    ...roles
+                ]
+            }
+        ])
+}
+
+async function updateEmployeeRole(employeeInfo) {
+    const roleId = await getRoleId(employeeInfo.role);
+    const employee = getFirstAndLastName(employeeInfo.employeeName);
+
+    const rows = await db.query('UPDATE employee SET role_id=? WHERE employee.first_name=? AND employee.last_name=?', [roleId, employee[0], employee[1]]);
+    console.log(`Employee ${employee[0]} ${employee[1]} now has role ${employeeInfo.role}`);
 }
 
 
@@ -166,9 +210,9 @@ async function main() {
         }
 
         case 'Add Employee' : {
-            const newEmployee = await addEmployeeInfo();
-            console.log(newEmployee);
-            await addEmployee(newEmployee);
+            const employee = await addEmployeeInfo();
+            console.log(employee);
+            await addEmployee(employee);
             break;
         }
 
@@ -178,7 +222,8 @@ async function main() {
         }
 
         case 'Update Employee Role' : {
-            console.log("Updated Employee Role");
+            const employee = await updateEmployeeRoleInfo();
+            await updateEmployeeRole(employee);
             break;
         }
 
