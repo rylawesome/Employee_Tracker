@@ -10,14 +10,113 @@ const db = new Database({
     database: "cms_db"
 });
 
-/* Required database calls */
+// Required database calls
 
 async function viewEmployees() {
     const rows = await db.query("SELECT * FROM employee");
     console.table(rows);
     }
 
-/* End Database Calls */
+// Return array with [first_name, last_name]
+
+function getFirstAndLastName( fullName ) {
+    let employee = fullName.split(" ");
+    if(employee.length == 2) {
+        return employee;
+    }
+
+    const last_name = employee[employee.length-1];
+    const first_name = employee[employee.length-2];
+    return [first_name, last_name];
+}
+
+async function getRoleId(roleName) {
+    const rows = await db.query("SELECT * FROM role WHERE role.title=?", roleName);
+    return rows[0].id;
+}
+
+// Builds managerNames array
+
+async function getManagerNames() {
+    const rows = await db.query("SELECT * FROM employee WHERE manager_id IS NULL");
+    let managerNames = [];
+    for(const employee of rows) {
+        managerNames.push(employee.first_name + " " + employee.last_name);
+    }
+    return managerNames;
+}
+
+// Builds roles array
+
+async function getRoles() {
+    const rows = await db.query("SELECT title FROM role");
+
+    let roles = [];
+    for(const row of rows) {
+        roles.push(row.title);
+    }
+
+    return roles;
+}
+
+// Uses above built arrays to give user roles/managers list
+
+async function addEmployeeInfo() {
+    const managers = await getManagerNames();
+    const roles = await getRoles();
+    return inquirer
+        .prompt([
+            {
+                type: "input",
+                name: "first_name",
+                message: "What is the employee's first name?"
+            },
+            {
+                type: "input",
+                name: "last_name",
+                message: "What is the employee's last name?"
+            },
+            {
+                type: "list",
+                message: "What is the employee's role?",
+                name: "role",
+                choices: [
+                    ...roles
+                ]
+            },
+            {
+                type: "list",
+                message: "Who is the employee's manager?",
+                name: "manager",
+                choices: [
+                    ...managers
+                ]
+            }
+        ])
+}
+
+async function getEmployeeId(fullName) {
+    // First split the name into first name and last name
+    let employee = getFirstAndLastName(fullName);
+
+    let query = 'SELECT id FROM employee WHERE employee.first_name=? AND employee.last_name=?';
+    let args=[employee[0], employee[1]];
+    const rows = await db.query(query, args);
+    return rows[0].id;
+}
+
+
+async function addEmployee(employeeInfo) {
+    let roleId = await getRoleId(employeeInfo.role);
+    let managerId = await getEmployeeId(employeeInfo.manager);
+
+    const rows = await db.query("INSERT into employee (first_name, last_name, role_id, manager_id) VALUES (?,?,?,?)", [employeeInfo.first_name, employeeInfo.last_name, roleId, managerId]);
+    console.log(`Added employee ${employeeInfo.first_name} ${employeeInfo.last_name}.`);
+}
+
+
+//Start building user prompts
+
 
 async function mainPrompt() {
     return inquirer
@@ -68,7 +167,6 @@ async function main() {
 
         case 'Add Employee' : {
             const newEmployee = await addEmployeeInfo();
-            console.log("add an employee");
             console.log(newEmployee);
             await addEmployee(newEmployee);
             break;
